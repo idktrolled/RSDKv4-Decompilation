@@ -1,6 +1,11 @@
 #ifndef INPUT_H
 #define INPUT_H
 
+#if RETRO_PLATFORM == RETRO_SWITCH
+// expose it for hacks
+bool getControllerButton(byte buttonID);
+#endif
+
 enum InputButtons {
     INPUT_UP,
     INPUT_DOWN,
@@ -60,8 +65,8 @@ enum DefaultHapticIDs {
     HAPTIC_STOP = -1,
 };
 
-extern InputData keyPress;
-extern InputData keyDown;
+extern InputData inputPress;
+extern InputData inputDown;
 
 extern int touchDown[8];
 extern int touchX[8];

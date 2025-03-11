@@ -131,6 +131,8 @@ void ProcessStage(void)
 
     switch (stageMode) {
         case STAGEMODE_LOAD: // Startup
+			ClearGraphicsData();
+			ClearAnimationData();
             SetActivePalette(0, 0, 256);
             gameMenu[0].visibleRowOffset = 0;
             gameMenu[1].alignment        = 0;
@@ -157,14 +159,6 @@ void ProcessStage(void)
             stageSeconds                 = 0;
             stageMinutes                 = 0;
             stageMode                    = STAGEMODE_NORMAL;
-
-#if RSDK_AUTOBUILD
-            // Prevent playing as Amy if on autobuilds
-            if (GetGlobalVariableByName("PLAYER_AMY") && playerListPos == GetGlobalVariableByName("PLAYER_AMY"))
-                playerListPos = 0;
-            else if (GetGlobalVariableByName("PLAYER_AMY_TAILS") && playerListPos == GetGlobalVariableByName("PLAYER_AMY_TAILS"))
-                playerListPos = 0;
-#endif
 
 #if RETRO_USE_MOD_LOADER
             for (int m = 0; m < modList.size(); ++m) ScanModFolder(&modList[m]);
@@ -218,24 +212,25 @@ void ProcessStage(void)
         case STAGEMODE_NORMAL:
             drawStageGFXHQ = false;
             if (fadeMode > 0)
-                fadeMode--;
+                fadeMode = 0;
 
             lastXSize = -1;
             lastYSize = -1;
-            CheckKeyDown(&keyDown);
-            CheckKeyPress(&keyPress);
-            if (pauseEnabled && keyPress.start) {
+            CheckKeyDown(&inputDown);
+            CheckKeyPress(&inputPress);
+			/*
+            if (pauseEnabled && inputPress.start) {
                 stageMode = STAGEMODE_NORMAL_STEP;
                 PauseSound();
             }
-
+			*/
+			
             if (timeEnabled) {
                 if (++frameCounter == 60) {
                     frameCounter = 0;
                     if (++stageSeconds > 59) {
                         stageSeconds = 0;
-                        if (++stageMinutes > 59)
-                            stageMinutes = 0;
+                        ++stageMinutes;
                     }
                 }
                 stageMilliseconds = 100 * frameCounter / 60;
@@ -270,18 +265,20 @@ void ProcessStage(void)
         case STAGEMODE_PAUSED:
             drawStageGFXHQ = false;
             if (fadeMode > 0)
-                fadeMode--;
+                fadeMode = 0;
 
             lastXSize = -1;
             lastYSize = -1;
-            CheckKeyDown(&keyDown);
-            CheckKeyPress(&keyPress);
+            CheckKeyDown(&inputDown);
+            CheckKeyPress(&inputPress);
 
-            if (pauseEnabled && keyPress.start) {
+			/*
+            if (pauseEnabled && inputPress.start) {
                 stageMode = STAGEMODE_PAUSED_STEP;
                 PauseSound();
             }
-
+			*/
+			
             // Update
             ProcessPausedObjects();
 
@@ -298,13 +295,6 @@ void ProcessStage(void)
             DrawObjectList(3);
             DrawObjectList(4);
             DrawObjectList(5);
-#if RETRO_REV03
-#if !RETRO_USE_ORIGINAL_CODE
-            // Hacky fix for Tails Object not working properly in special stages on non-Origins bytecode
-            if (forceUseScripts || Engine.usingOrigins)
-#endif
-                DrawObjectList(7);
-#endif
             DrawObjectList(6);
 
 #if !RETRO_USE_ORIGINAL_CODE
@@ -315,12 +305,12 @@ void ProcessStage(void)
         case STAGEMODE_FROZEN:
             drawStageGFXHQ = false;
             if (fadeMode > 0)
-                fadeMode--;
+                fadeMode = 0;
 
             lastXSize = -1;
             lastYSize = -1;
-            CheckKeyDown(&keyDown);
-            CheckKeyPress(&keyPress);
+            CheckKeyDown(&inputDown);
+            CheckKeyPress(&inputPress);
 
             // Update
             ProcessFrozenObjects();
@@ -348,48 +338,51 @@ void ProcessStage(void)
         case STAGEMODE_2P:
             drawStageGFXHQ = false;
             if (fadeMode > 0)
-                fadeMode--;
+                fadeMode = 0;
 
             lastXSize = -1;
             lastYSize = -1;
-            CheckKeyDown(&keyDown);
-            CheckKeyPress(&keyPress);
-            if (pauseEnabled && keyPress.start) {
+            CheckKeyDown(&inputDown);
+            CheckKeyPress(&inputPress);
+			/*
+            if (pauseEnabled && inputPress.start) {
                 stageMode = STAGEMODE_2P_STEP;
                 PauseSound();
             }
+			*/
 
-            if (timeEnabled) {
-                if (++frameCounter == 60) {
-                    frameCounter = 0;
-                    if (++stageSeconds > 59) {
-                        stageSeconds = 0;
-                        if (++stageMinutes > 59)
-                            stageMinutes = 0;
+            if (!waitForVerify) {
+                if (timeEnabled) {
+                    if (++frameCounter == 60) {
+                        frameCounter = 0;
+                        if (++stageSeconds > 59) {
+                            stageSeconds = 0;
+                            ++stageMinutes;
+                        }
                     }
-                }
-                stageMilliseconds = 100 * frameCounter / 60;
-            }
-            else {
-                frameCounter = 60 * stageMilliseconds / 100;
-            }
-
-            // Update
-            Process2PObjects();
-
-            if (cameraTarget > -1) {
-                if (cameraEnabled == 1) {
-                    switch (cameraStyle) {
-                        case CAMERASTYLE_FOLLOW: SetPlayerScreenPosition(&objectEntityList[cameraTarget]); break;
-                        case CAMERASTYLE_EXTENDED:
-                        case CAMERASTYLE_EXTENDED_OFFSET_L:
-                        case CAMERASTYLE_EXTENDED_OFFSET_R: SetPlayerScreenPositionCDStyle(&objectEntityList[cameraTarget]); break;
-                        case CAMERASTYLE_HLOCKED: SetPlayerHLockedScreenPosition(&objectEntityList[cameraTarget]); break;
-                        default: break;
-                    }
+                    stageMilliseconds = 100 * frameCounter / 60;
                 }
                 else {
-                    SetPlayerLockedScreenPosition(&objectEntityList[cameraTarget]);
+                    frameCounter = 60 * stageMilliseconds / 100;
+                }
+
+                // Update
+                Process2PObjects();
+
+                if (cameraTarget > -1) {
+                    if (cameraEnabled == 1) {
+                        switch (cameraStyle) {
+                            case CAMERASTYLE_FOLLOW: SetPlayerScreenPosition(&objectEntityList[cameraTarget]); break;
+                            case CAMERASTYLE_EXTENDED:
+                            case CAMERASTYLE_EXTENDED_OFFSET_L:
+                            case CAMERASTYLE_EXTENDED_OFFSET_R: SetPlayerScreenPositionCDStyle(&objectEntityList[cameraTarget]); break;
+                            case CAMERASTYLE_HLOCKED: SetPlayerHLockedScreenPosition(&objectEntityList[cameraTarget]); break;
+                            default: break;
+                        }
+                    }
+                    else {
+                        SetPlayerLockedScreenPosition(&objectEntityList[cameraTarget]);
+                    }
                 }
             }
 
@@ -401,23 +394,22 @@ void ProcessStage(void)
         case STAGEMODE_NORMAL_STEP:
             drawStageGFXHQ = false;
             if (fadeMode > 0)
-                fadeMode--;
+                fadeMode = 0;
 
             lastXSize = -1;
             lastYSize = -1;
-            CheckKeyDown(&keyDown);
-            CheckKeyPress(&keyPress);
+            CheckKeyDown(&inputDown);
+            CheckKeyPress(&inputPress);
 
-            if (keyPress.C) {
-                keyPress.C = false;
+            if (inputPress.C) {
+                inputPress.C = false;
 
                 if (timeEnabled) {
                     if (++frameCounter == 60) {
                         frameCounter = 0;
                         if (++stageSeconds > 59) {
                             stageSeconds = 0;
-                            if (++stageMinutes > 59)
-                                stageMinutes = 0;
+                            ++stageMinutes;
                         }
                     }
                     stageMilliseconds = 100 * frameCounter / 60;
@@ -447,7 +439,7 @@ void ProcessStage(void)
                 ProcessParallaxAutoScroll();
             }
 
-            if (pauseEnabled && keyPress.start) {
+            if (pauseEnabled && inputPress.start) {
                 stageMode = STAGEMODE_NORMAL;
                 ResumeSound();
             }
@@ -456,14 +448,14 @@ void ProcessStage(void)
         case STAGEMODE_PAUSED_STEP:
             drawStageGFXHQ = false;
             if (fadeMode > 0)
-                fadeMode--;
+                fadeMode = 0;
 
             lastXSize = -1;
             lastYSize = -1;
-            CheckKeyDown(&keyDown);
-            CheckKeyPress(&keyPress);
+            CheckKeyDown(&inputDown);
+            CheckKeyPress(&inputPress);
 
-            if (keyPress.C) {
+            if (inputPress.C) {
 #if RETRO_HARDWARE_RENDER
                 gfxIndexSize        = 0;
                 gfxVertexSize       = 0;
@@ -471,7 +463,7 @@ void ProcessStage(void)
                 gfxVertexSizeOpaque = 0;
 #endif
 
-                keyPress.C = false;
+                inputPress.C = false;
                 ProcessPausedObjects();
                 DrawObjectList(0);
                 DrawObjectList(1);
@@ -479,13 +471,6 @@ void ProcessStage(void)
                 DrawObjectList(3);
                 DrawObjectList(4);
                 DrawObjectList(5);
-#if RETRO_REV03
-#if !RETRO_USE_ORIGINAL_CODE
-                // Hacky fix for Tails Object not working properly in special stages on non-Origins bytecode
-                if (forceUseScripts || Engine.usingOrigins)
-#endif
-                    DrawObjectList(7);
-#endif
                 DrawObjectList(6);
 
 #if !RETRO_USE_ORIGINAL_CODE
@@ -493,7 +478,7 @@ void ProcessStage(void)
 #endif
             }
 
-            if (pauseEnabled && keyPress.start) {
+            if (pauseEnabled && inputPress.start) {
                 stageMode = STAGEMODE_PAUSED;
                 ResumeSound();
             }
@@ -502,15 +487,15 @@ void ProcessStage(void)
         case STAGEMODE_FROZEN_STEP:
             drawStageGFXHQ = false;
             if (fadeMode > 0)
-                fadeMode--;
+                fadeMode = 0;
 
             lastXSize = -1;
             lastYSize = -1;
-            CheckKeyDown(&keyDown);
-            CheckKeyPress(&keyPress);
+            CheckKeyDown(&inputDown);
+            CheckKeyPress(&inputPress);
 
-            if (keyPress.C) {
-                keyPress.C = false;
+            if (inputPress.C) {
+                inputPress.C = false;
 
                 // Update
                 ProcessFrozenObjects();
@@ -533,7 +518,7 @@ void ProcessStage(void)
 
                 DrawStageGFX();
             }
-            if (pauseEnabled && keyPress.start) {
+            if (pauseEnabled && inputPress.start) {
                 stageMode = STAGEMODE_FROZEN;
                 ResumeSound();
             }
@@ -543,22 +528,21 @@ void ProcessStage(void)
         case STAGEMODE_2P_STEP:
             drawStageGFXHQ = false;
             if (fadeMode > 0)
-                fadeMode--;
+                fadeMode = 0;
 
             lastXSize = -1;
             lastYSize = -1;
-            CheckKeyDown(&keyDown);
-            CheckKeyPress(&keyPress);
-            if (keyPress.C) {
-                keyPress.C = false;
+            CheckKeyDown(&inputDown);
+            CheckKeyPress(&inputPress);
+            if (inputPress.C) {
+                inputPress.C = false;
 
                 if (timeEnabled) {
                     if (++frameCounter == 60) {
                         frameCounter = 0;
                         if (++stageSeconds > 59) {
                             stageSeconds = 0;
-                            if (++stageMinutes > 59)
-                                stageMinutes = 0;
+                            ++stageMinutes;
                         }
                     }
                     stageMilliseconds = 100 * frameCounter / 60;
@@ -590,7 +574,7 @@ void ProcessStage(void)
                 ProcessParallaxAutoScroll();
             }
 
-            if (pauseEnabled && keyPress.start) {
+            if (pauseEnabled && inputPress.start) {
                 stageMode = STAGEMODE_2P;
                 ResumeSound();
             }
@@ -633,7 +617,7 @@ void LoadStageFiles(void)
             CloseFile();
         }
 
-        if (loadGlobalScripts && LoadFile("Data/Game/GameConfig.bin", &info)) {
+        if (LoadFile("Data/Game/GameConfig.bin", &info)) {
             FileRead(&fileBuffer, 1);
             FileRead(&strBuffer, fileBuffer);
             FileRead(&fileBuffer, 1);
@@ -645,82 +629,86 @@ void LoadStageFiles(void)
                 SetPaletteEntry(-1, c, buf[0], buf[1], buf[2]);
             }
 
-            byte globalObjectCount = 0;
-            FileRead(&globalObjectCount, 1);
-            for (byte i = 0; i < globalObjectCount; ++i) {
-                FileRead(&fileBuffer2, 1);
-                FileRead(strBuffer, fileBuffer2);
-                strBuffer[fileBuffer2] = 0;
-                SetObjectTypeName(strBuffer, scriptID + i);
-            }
+			if (loadGlobalScripts) {
+				byte globalObjectCount = 0;
+				FileRead(&globalObjectCount, 1);
+				for (byte i = 0; i < globalObjectCount; ++i) {
+					FileRead(&fileBuffer2, 1);
+					FileRead(strBuffer, fileBuffer2);
+					strBuffer[fileBuffer2] = 0;
+					SetObjectTypeName(strBuffer, scriptID + i);
+				}
 
 #if RETRO_USE_MOD_LOADER && RETRO_USE_COMPILER
-            for (byte i = 0; i < modObjCount && loadGlobalScripts; ++i) {
-                SetObjectTypeName(modTypeNames[i], globalObjectCount + i + 1);
-            }
+				for (byte i = 0; i < modObjCount && loadGlobalScripts; ++i) {
+					SetObjectTypeName(modTypeNames[i], globalObjectCount + i + 1);
+				}
 #endif
 
 #if RETRO_USE_COMPILER
 #if !RETRO_USE_ORIGINAL_CODE
-            bool bytecodeExists = false;
-            FileInfo bytecodeInfo;
-            GetFileInfo(&bytecodeInfo);
-            CloseFile();
-            if (LoadFile("Bytecode/GlobalCode.bin", &info)) {
-                bytecodeExists = true;
-                CloseFile();
-            }
-            SetFileInfo(&bytecodeInfo);
+				bool bytecodeExists = false;
+				FileInfo bytecodeInfo;
+				GetFileInfo(&bytecodeInfo);
+				CloseFile();
+				if (LoadFile("Bytecode/GlobalCode.bin", &info)) {
+					bytecodeExists = true;
+					CloseFile();
+				}
+				SetFileInfo(&bytecodeInfo);
 
-            if (bytecodeExists && !forceUseScripts) {
+				if (bytecodeExists && !forceUseScripts) {
 #else
-            if (Engine.usingBytecode) {
+				if (Engine.usingBytecode) {
 #endif
-                GetFileInfo(&infoStore);
-                CloseFile();
-                LoadBytecode(4, scriptID);
-                scriptID += globalObjectCount;
-                SetFileInfo(&infoStore);
-            }
-            else {
-                for (byte i = 0; i < globalObjectCount; ++i) {
-                    FileRead(&fileBuffer2, 1);
-                    FileRead(strBuffer, fileBuffer2);
-                    strBuffer[fileBuffer2] = 0;
-                    GetFileInfo(&infoStore);
-                    CloseFile();
-                    ParseScriptFile(strBuffer, scriptID++);
-                    SetFileInfo(&infoStore);
-                    if (Engine.gameMode == ENGINE_SCRIPTERROR)
-                        return;
-                }
-            }
+					GetFileInfo(&infoStore);
+					CloseFile();
+					LoadBytecode(4, scriptID);
+					scriptID += globalObjectCount;
+					SetFileInfo(&infoStore);
+				}
+				else {
+					for (byte i = 0; i < globalObjectCount; ++i) {
+						FileRead(&fileBuffer2, 1);
+						FileRead(strBuffer, fileBuffer2);
+						strBuffer[fileBuffer2] = 0;
+						GetFileInfo(&infoStore);
+						CloseFile();
+						ParseScriptFile(strBuffer, scriptID++);
+						SetFileInfo(&infoStore);
+						if (Engine.gameMode == ENGINE_SCRIPTERROR)
+							return;
+					}
+				}
 #else
-            GetFileInfo(&infoStore);
-            CloseFile();
-            LoadBytecode(4, scriptID);
-            scriptID += globalObjectCount;
-            SetFileInfo(&infoStore);
+				GetFileInfo(&infoStore);
+				CloseFile();
+				LoadBytecode(4, scriptID);
+				scriptID += globalObjectCount;
+				SetFileInfo(&infoStore);
 #endif
-            CloseFile();
+				CloseFile();
 
 #if RETRO_USE_MOD_LOADER
-            Engine.LoadXMLPalettes();
+				Engine.LoadXMLPalettes();
 #endif
 
 #if RETRO_USE_MOD_LOADER && RETRO_USE_COMPILER
-            globalObjCount = globalObjectCount;
-            for (byte i = 0; i < modObjCount && loadGlobalScripts; ++i) {
-                SetObjectTypeName(modTypeNames[i], scriptID);
+				globalObjCount = globalObjectCount;
+				for (byte i = 0; i < modObjCount && loadGlobalScripts; ++i) {
+					SetObjectTypeName(modTypeNames[i], scriptID);
 
-                GetFileInfo(&infoStore);
-                CloseFile();
-                ParseScriptFile(modScriptPaths[i], scriptID++);
-                SetFileInfo(&infoStore);
-                if (Engine.gameMode == ENGINE_SCRIPTERROR)
-                    return;
-            }
+					//SetFileInfo here was causing a crash when XML mods were mixed with non XML mods
+					//so GET IT THE FUCK OUTTA HERE
+					//GetFileInfo(&infoStore);
+					CloseFile();
+					ParseScriptFile(modScriptPaths[i], scriptID++);
+					//SetFileInfo(&infoStore);
+					if (Engine.gameMode == ENGINE_SCRIPTERROR)
+						return;
+				}
 #endif
+			}
         }
 
         if (LoadStageFile("StageConfig.bin", stageListPosition, &info)) {

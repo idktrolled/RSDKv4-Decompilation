@@ -7,7 +7,7 @@ char playerListText[0x80][0x20];
 
 BitmapFont fontList[FONTLIST_COUNT];
 
-#if !RETRO_REV02
+#if RETRO_REV00 || RETRO_REV01
 FontCharacter fontCharacterList[FONTCHAR_COUNT];
 
 void LoadFontFile(const char *filePath)
@@ -99,7 +99,7 @@ void LoadTextFile(TextMenu *menu, const char *filePath, byte mapCode)
         menu->entryStart[menu->rowCount] = menu->textDataPos;
         menu->entrySize[menu->rowCount]  = 0;
 
-#if !RETRO_REV02
+#if RETRO_REV00 || RETRO_REV01
         bool flag = false;
         FileRead(&fileBuffer, 1);
         if (fileBuffer == 0xFF) {
@@ -248,6 +248,7 @@ void AddTextMenuEntry(TextMenu *menu, const char *text)
 {
     menu->entryStart[menu->rowCount]     = menu->textDataPos;
     menu->entrySize[menu->rowCount]      = 0;
+    menu->entryHighlight[menu->rowCount] = false;
     int textLength                       = StrLength(text);
     for (int i = 0; i < textLength;) {
         if (text[i] != '\0') {
@@ -265,6 +266,7 @@ void AddTextMenuEntryW(TextMenu *menu, const ushort *text)
 {
     menu->entryStart[menu->rowCount]     = menu->textDataPos;
     menu->entrySize[menu->rowCount]      = 0;
+    menu->entryHighlight[menu->rowCount] = false;
     int textLength                       = StrLengthW(text);
     for (int i = 0; i < textLength;) {
         if (text[i] != '\0') {
@@ -282,6 +284,7 @@ void SetTextMenuEntry(TextMenu *menu, const char *text, int rowID)
 {
     menu->entryStart[rowID]              = menu->textDataPos;
     menu->entrySize[rowID]               = 0;
+    menu->entryHighlight[menu->rowCount] = false;
     int textLength                       = StrLength(text);
     for (int i = 0; i < textLength;) {
         if (text[i] != '\0') {
@@ -298,6 +301,7 @@ void SetTextMenuEntryW(TextMenu *menu, const ushort *text, int rowID)
 {
     menu->entryStart[rowID]              = menu->textDataPos;
     menu->entrySize[rowID]               = 0;
+    menu->entryHighlight[menu->rowCount] = false;
     int textLength                       = StrLengthW(text);
     for (int i = 0; i < textLength;) {
         if (text[i] != '\0') {
@@ -314,6 +318,7 @@ void EditTextMenuEntry(TextMenu *menu, const char *text, int rowID)
 {
     int entryPos                         = menu->entryStart[rowID];
     menu->entrySize[rowID]               = 0;
+    menu->entryHighlight[menu->rowCount] = false;
     int textLength                       = StrLength(text);
     for (int i = 0; i < textLength;) {
         if (text[i] != '\0') {

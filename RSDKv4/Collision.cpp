@@ -7,6 +7,8 @@ int collisionBottom = 0;
 
 int collisionTolerance = 0;
 
+int crushForgive = 0x20000;
+
 CollisionSensor sensors[RETRO_REV00 ? 6 : 7];
 
 #if !RETRO_USE_ORIGINAL_CODE
@@ -15,7 +17,7 @@ byte showHitboxes = 0;
 int debugHitboxCount = 0;
 DebugHitboxInfo debugHitboxList[DEBUG_HITBOX_COUNT];
 
-int AddDebugHitbox(byte type, Entity *entity, int left, int top, int right, int bottom)
+int addDebugHitbox(byte type, Entity *entity, int left, int top, int right, int bottom)
 {
     int i = 0;
     for (; i < debugHitboxCount; ++i) {
@@ -47,7 +49,7 @@ int AddDebugHitbox(byte type, Entity *entity, int left, int top, int right, int 
 }
 #endif
 
-inline Hitbox *GetHitbox(Entity *entity)
+inline Hitbox *getHitbox(Entity *entity)
 {
     AnimationFile *thisAnim = objectScriptList[entity->type].animFile;
     return &hitboxList[thisAnim->hitboxListOffset
@@ -711,7 +713,7 @@ void RWallCollision(Entity *player, CollisionSensor *sensor)
 
 void ProcessAirCollision(Entity *entity)
 {
-    Hitbox *playerHitbox = GetHitbox(entity);
+    Hitbox *playerHitbox = getHitbox(entity);
     collisionLeft        = playerHitbox->left[0];
     collisionTop         = playerHitbox->top[0];
     collisionRight       = playerHitbox->right[0];
@@ -1512,7 +1514,7 @@ void ProcessPathGrip(Entity *entity)
 
 void SetPathGripSensors(Entity *player)
 {
-    Hitbox *playerHitbox = GetHitbox(player);
+    Hitbox *playerHitbox = getHitbox(player);
 
     switch (player->collisionMode) {
         case CMODE_FLOOR: {
@@ -2146,174 +2148,43 @@ void ObjectRWallGrip(int xOffset, int yOffset, int cPath)
         scriptEng.checkResult = false;
     }
 }
-#if RETRO_REV03
-void ObjectLEntityGrip(int xOffset, int yOffset, int cPath)
-{
-    scriptEng.checkResult = false;
-    Entity *entity        = &objectEntityList[objectEntityPos];
-    int mBlockID          = entity->values[44];
-    int XPos              = (entity->xpos >> 16) + xOffset - 16;
-    int YPos              = (entity->ypos >> 16) + yOffset;
-    int check             = 0;
-    if (mBlockID > 0 && objectTypeGroupList[mBlockID].listSize > 0) {
-        TypeGroupList *mBlockGroupList = &objectTypeGroupList[mBlockID];
-        for (int i = 0; i < objectTypeGroupList[mBlockID].listSize; i++) {
-            short entRef        = mBlockGroupList->entityRefs[i];
-            Entity *otherEntity = &objectEntityList[entRef];
-            int XPos2           = otherEntity->xpos >> 16;
-            int YPos2           = otherEntity->ypos >> 16;
-            if (((((XPos2 - 16) <= XPos) && (XPos <= (XPos2 + 16))) && ((YPos2 - 16) <= YPos)) && (YPos <= (YPos2 + 16))) {
-                entity->xpos = otherEntity->xpos - (xOffset << 16) - 0x100000;
-                if (otherEntity->values[0] == 0) {
-                    check                 = 2;
-                    scriptEng.checkResult = check;
-                }
-                else {
-                    scriptEng.checkResult = check;
-                    if (check != 2) {
-                        check                 = 1;
-                        scriptEng.checkResult = check;
-                    }
-                }
-            }
-            if ((((XPos2 - 16) <= (XPos + 16) && ((XPos + 16) <= (XPos2 + 16))) && (YPos2 - 16) <= YPos) && (YPos <= (YPos2 + 16))) {
-                entity->xpos = otherEntity->xpos - (xOffset << 16) - 0x100000;
-                if (otherEntity->values[0] == 0) {
-                    check                 = 2;
-                    scriptEng.checkResult = check;
-                }
-                else {
-                    scriptEng.checkResult = check;
-                    if (check != 2) {
-                        scriptEng.checkResult = check;
-                    }
-                }
-            }
 
-            if (((XPos2 <= (XPos + 32)) && ((XPos + 32) <= (XPos2 + 16))) && (((YPos2 - 16) <= YPos && YPos <= (YPos2 + 16)))) {
-                entity->xpos = otherEntity->xpos - (xOffset << 16) - 0x100000;
-                if (otherEntity->values[0] == 0) {
-                    check                 = 2;
-                    scriptEng.checkResult = check;
-                }
-                else {
-                    scriptEng.checkResult = check;
-                    if (check != 2) {
-                        check                 = 1;
-                        scriptEng.checkResult = check;
-                    }
-                }
-            }
-
-            if (check != 0) {
-                return;
-            }
-        }
-    }
-    ObjectLWallGrip(xOffset, yOffset, cPath);
-}
-void ObjectREntityGrip(int xOffset, int yOffset, int cPath)
-{
-    scriptEng.checkResult = false;
-    Entity *entity        = &objectEntityList[objectEntityPos];
-    int mBlockID          = entity->values[44];
-    int XPos              = (entity->xpos >> 16) + xOffset + 16;
-    int YPos              = (entity->ypos >> 16) + yOffset;
-    int check             = 0;
-    if (mBlockID > 0 && objectTypeGroupList[mBlockID].listSize > 0) {
-        TypeGroupList *mBlockGroupList = &objectTypeGroupList[mBlockID];
-        for (int i = 0; i < objectTypeGroupList[mBlockID].listSize; i++) {
-            short entRef        = mBlockGroupList->entityRefs[i];
-            Entity *otherEntity = &objectEntityList[entRef];
-            int XPos2           = otherEntity->xpos >> 16;
-            int YPos2           = otherEntity->ypos >> 16;
-            if (((((XPos2 - 16) <= XPos) && (XPos <= (XPos2 + 16))) && ((YPos2 - 16) <= YPos)) && (YPos <= (YPos2 + 16))) {
-                entity->xpos = otherEntity->xpos + ((16 - xOffset) << 16);
-                if (otherEntity->values[0] == 0) {
-                    check                 = 2;
-                    scriptEng.checkResult = check;
-                }
-                else {
-                    scriptEng.checkResult = check;
-                    if (check != 2) {
-                        check                 = 1;
-                        scriptEng.checkResult = check;
-                    }
-                }
-            }
-            if ((((XPos2 - 16) <= (XPos + 16) && ((XPos - 16) <= (XPos2 + 16))) && (YPos2 - 16) <= YPos) && (YPos <= (YPos2 + 16))) {
-                entity->xpos = otherEntity->xpos + ((16 - xOffset) << 16);
-                if (otherEntity->values[0] == 0) {
-                    check                 = 2;
-                    scriptEng.checkResult = check;
-                }
-                else {
-                    scriptEng.checkResult = check;
-                    if (check != 2) {
-                        scriptEng.checkResult = check;
-                    }
-                }
-            }
-
-            if (((XPos2 <= (XPos - 32)) && ((XPos - 32) <= (XPos2 + 16))) && (((YPos2 - 16) <= YPos && YPos <= (YPos2 + 16)))) {
-                entity->xpos = otherEntity->xpos + ((16 - xOffset) << 16);
-                if (otherEntity->values[0] == 0) {
-                    check                 = 2;
-                    scriptEng.checkResult = check;
-                }
-                else {
-                    scriptEng.checkResult = check;
-                    if (check != 2) {
-                        check                 = 1;
-                        scriptEng.checkResult = check;
-                    }
-                }
-            }
-
-            if (check != 0) {
-                return;
-            }
-        }
-    }
-    ObjectRWallGrip(xOffset, yOffset, cPath);
-}
-#endif
 void TouchCollision(Entity *thisEntity, int thisLeft, int thisTop, int thisRight, int thisBottom, Entity *otherEntity, int otherLeft, int otherTop,
                     int otherRight, int otherBottom)
 {
-    Hitbox *thisHitbox  = GetHitbox(thisEntity);
-    Hitbox *otherHitbox = GetHitbox(otherEntity);
+    Hitbox *thisHitbox  = getHitbox(thisEntity);
+    Hitbox *otherHitbox = getHitbox(otherEntity);
 
-    if (thisLeft == C_BOX)
+    if (thisLeft == 0x10000)
         thisLeft = thisHitbox->left[0];
 
-    if (thisTop == C_BOX)
+    if (thisTop == 0x10000)
         thisTop = thisHitbox->top[0];
 
-    if (thisRight == C_BOX)
+    if (thisRight == 0x10000)
         thisRight = thisHitbox->right[0];
 
-    if (thisBottom == C_BOX)
+    if (thisBottom == 0x10000)
         thisBottom = thisHitbox->bottom[0];
 
-    if (otherLeft == C_BOX)
+    if (otherLeft == 0x10000)
         otherLeft = otherHitbox->left[0];
 
-    if (otherTop == C_BOX)
+    if (otherTop == 0x10000)
         otherTop = otherHitbox->top[0];
 
-    if (otherRight == C_BOX)
+    if (otherRight == 0x10000)
         otherRight = otherHitbox->right[0];
 
-    if (otherBottom == C_BOX)
+    if (otherBottom == 0x10000)
         otherBottom = otherHitbox->bottom[0];
 
 #if !RETRO_USE_ORIGINAL_CODE
     int thisHitboxID  = 0;
     int otherHitboxID = 0;
     if (showHitboxes) {
-        thisHitboxID  = AddDebugHitbox(H_TYPE_TOUCH, thisEntity, thisLeft, thisTop, thisRight, thisBottom);
-        otherHitboxID = AddDebugHitbox(H_TYPE_TOUCH, otherEntity, otherLeft, otherTop, otherRight, otherBottom);
+        thisHitboxID  = addDebugHitbox(H_TYPE_TOUCH, thisEntity, thisLeft, thisTop, thisRight, thisBottom);
+        otherHitboxID = addDebugHitbox(H_TYPE_TOUCH, otherEntity, otherLeft, otherTop, otherRight, otherBottom);
     }
 #endif
 
@@ -2341,39 +2212,39 @@ void TouchCollision(Entity *thisEntity, int thisLeft, int thisTop, int thisRight
 void BoxCollision(Entity *thisEntity, int thisLeft, int thisTop, int thisRight, int thisBottom, Entity *otherEntity, int otherLeft, int otherTop,
                   int otherRight, int otherBottom)
 {
-    Hitbox *thisHitbox  = GetHitbox(thisEntity);
-    Hitbox *otherHitbox = GetHitbox(otherEntity);
+    Hitbox *thisHitbox  = getHitbox(thisEntity);
+    Hitbox *otherHitbox = getHitbox(otherEntity);
 
-    if (thisLeft == C_BOX)
+    if (thisLeft == 0x10000)
         thisLeft = thisHitbox->left[0];
 
-    if (thisTop == C_BOX)
+    if (thisTop == 0x10000)
         thisTop = thisHitbox->top[0];
 
-    if (thisRight == C_BOX)
+    if (thisRight == 0x10000)
         thisRight = thisHitbox->right[0];
 
-    if (thisBottom == C_BOX)
+    if (thisBottom == 0x10000)
         thisBottom = thisHitbox->bottom[0];
 
-    if (otherLeft == C_BOX)
+    if (otherLeft == 0x10000)
         otherLeft = otherHitbox->left[0];
 
-    if (otherTop == C_BOX)
+    if (otherTop == 0x10000)
         otherTop = otherHitbox->top[0];
 
-    if (otherRight == C_BOX)
+    if (otherRight == 0x10000)
         otherRight = otherHitbox->right[0];
 
-    if (otherBottom == C_BOX)
+    if (otherBottom == 0x10000)
         otherBottom = otherHitbox->bottom[0];
 
 #if !RETRO_USE_ORIGINAL_CODE
     int thisHitboxID  = 0;
     int otherHitboxID = 0;
     if (showHitboxes) {
-        thisHitboxID  = AddDebugHitbox(H_TYPE_BOX, thisEntity, thisLeft, thisTop, thisRight, thisBottom);
-        otherHitboxID = AddDebugHitbox(H_TYPE_BOX, otherEntity, otherLeft, otherTop, otherRight, otherBottom);
+        thisHitboxID  = addDebugHitbox(H_TYPE_BOX, thisEntity, thisLeft, thisTop, thisRight, thisBottom);
+        otherHitboxID = addDebugHitbox(H_TYPE_BOX, otherEntity, otherLeft, otherTop, otherRight, otherBottom);
     }
 #endif
 
@@ -2444,8 +2315,8 @@ void BoxCollision(Entity *thisEntity, int thisLeft, int thisTop, int thisRight, 
         else {
             sensors[0].collided = false;
             sensors[1].collided = false;
-            sensors[0].xpos     = rx + otherLeft + 0x20000;
-            sensors[1].xpos     = rx + otherRight - 0x20000;
+            sensors[0].xpos     = rx + otherLeft + crushForgive;
+            sensors[1].xpos     = rx + otherRight - crushForgive;
 
             sensors[0].ypos = ry + otherTop;
 
@@ -2623,8 +2494,8 @@ void BoxCollision(Entity *thisEntity, int thisLeft, int thisTop, int thisRight, 
                 else {
                     sensors[0].collided = false;
                     sensors[1].collided = false;
-                    sensors[0].xpos     = rx + otherLeft + 0x20000;
-                    sensors[1].xpos     = rx + otherRight - 0x20000;
+                    sensors[0].xpos     = rx + otherLeft + crushForgive;
+                    sensors[1].xpos     = rx + otherRight - crushForgive;
                     sensors[0].ypos     = ry + otherTop;
 
                     for (int i = 0; i < 2; ++i) {
@@ -2659,39 +2530,39 @@ void BoxCollision(Entity *thisEntity, int thisLeft, int thisTop, int thisRight, 
 void BoxCollision2(Entity *thisEntity, int thisLeft, int thisTop, int thisRight, int thisBottom, Entity *otherEntity, int otherLeft, int otherTop,
                    int otherRight, int otherBottom)
 {
-    Hitbox *thisHitbox  = GetHitbox(thisEntity);
-    Hitbox *otherHitbox = GetHitbox(otherEntity);
+    Hitbox *thisHitbox  = getHitbox(thisEntity);
+    Hitbox *otherHitbox = getHitbox(otherEntity);
 
-    if (thisLeft == C_BOX)
+    if (thisLeft == 0x10000)
         thisLeft = thisHitbox->left[0];
 
-    if (thisTop == C_BOX)
+    if (thisTop == 0x10000)
         thisTop = thisHitbox->top[0];
 
-    if (thisRight == C_BOX)
+    if (thisRight == 0x10000)
         thisRight = thisHitbox->right[0];
 
-    if (thisBottom == C_BOX)
+    if (thisBottom == 0x10000)
         thisBottom = thisHitbox->bottom[0];
 
-    if (otherLeft == C_BOX)
+    if (otherLeft == 0x10000)
         otherLeft = otherHitbox->left[0];
 
-    if (otherTop == C_BOX)
+    if (otherTop == 0x10000)
         otherTop = otherHitbox->top[0];
 
-    if (otherRight == C_BOX)
+    if (otherRight == 0x10000)
         otherRight = otherHitbox->right[0];
 
-    if (otherBottom == C_BOX)
+    if (otherBottom == 0x10000)
         otherBottom = otherHitbox->bottom[0];
 
 #if !RETRO_USE_ORIGINAL_CODE
     int thisHitboxID  = 0;
     int otherHitboxID = 0;
     if (showHitboxes) {
-        thisHitboxID  = AddDebugHitbox(H_TYPE_BOX, thisEntity, thisLeft, thisTop, thisRight, thisBottom);
-        otherHitboxID = AddDebugHitbox(H_TYPE_BOX, otherEntity, otherLeft, otherTop, otherRight, otherBottom);
+        thisHitboxID  = addDebugHitbox(H_TYPE_BOX, thisEntity, thisLeft, thisTop, thisRight, thisBottom);
+        otherHitboxID = addDebugHitbox(H_TYPE_BOX, otherEntity, otherLeft, otherTop, otherRight, otherBottom);
     }
 #endif
 
@@ -2733,7 +2604,7 @@ void BoxCollision2(Entity *thisEntity, int thisLeft, int thisTop, int thisRight,
         sensors[0].ypos = ry + otherBottom;
 
         if (otherEntity->yvel >= 0) {
-            // this should prolly be using all 5 sensors, but this was barely used in S2 so it was prolly forgotten about
+            // this should prolly be using all 5 sensors, but this was unused in S2 so it was prolly forgotten about
             for (int i = 0; i < 3; ++i) {
                 if (thisLeft < sensors[i].xpos && thisRight > sensors[i].xpos && thisTop <= sensors[0].ypos && thisEntity->ypos > sensors[0].ypos) {
                     sensors[i].collided          = true;
@@ -2758,8 +2629,8 @@ void BoxCollision2(Entity *thisEntity, int thisLeft, int thisTop, int thisRight,
         else {
             sensors[0].collided = false;
             sensors[1].collided = false;
-            sensors[0].xpos     = rx + otherLeft + 0x20000;
-            sensors[1].xpos     = rx + otherRight - 0x20000;
+            sensors[0].xpos     = rx + otherLeft + crushForgive;
+            sensors[1].xpos     = rx + otherRight - crushForgive;
 
             sensors[0].ypos = ry + otherTop;
 
@@ -2922,8 +2793,8 @@ void BoxCollision2(Entity *thisEntity, int thisLeft, int thisTop, int thisRight,
                 else {
                     sensors[0].collided = false;
                     sensors[1].collided = false;
-                    sensors[0].xpos     = rx + otherLeft + 0x20000;
-                    sensors[1].xpos     = rx + otherRight - 0x20000;
+                    sensors[0].xpos     = rx + otherLeft + crushForgive;
+                    sensors[1].xpos     = rx + otherRight - crushForgive;
 
                     sensors[0].ypos = ry + otherTop;
 
@@ -2965,39 +2836,39 @@ void PlatformCollision(Entity *thisEntity, int thisLeft, int thisTop, int thisRi
 {
     scriptEng.checkResult = false;
 
-    Hitbox *thisHitbox  = GetHitbox(thisEntity);
-    Hitbox *otherHitbox = GetHitbox(otherEntity);
+    Hitbox *thisHitbox  = getHitbox(thisEntity);
+    Hitbox *otherHitbox = getHitbox(otherEntity);
 
-    if (thisLeft == C_BOX)
+    if (thisLeft == 0x10000)
         thisLeft = thisHitbox->left[0];
 
-    if (thisTop == C_BOX)
+    if (thisTop == 0x10000)
         thisTop = thisHitbox->top[0];
 
-    if (thisRight == C_BOX)
+    if (thisRight == 0x10000)
         thisRight = thisHitbox->right[0];
 
-    if (thisBottom == C_BOX)
+    if (thisBottom == 0x10000)
         thisBottom = thisHitbox->bottom[0];
 
-    if (otherLeft == C_BOX)
+    if (otherLeft == 0x10000)
         otherLeft = otherHitbox->left[0];
 
-    if (otherTop == C_BOX)
+    if (otherTop == 0x10000)
         otherTop = otherHitbox->top[0];
 
-    if (otherRight == C_BOX)
+    if (otherRight == 0x10000)
         otherRight = otherHitbox->right[0];
 
-    if (otherBottom == C_BOX)
+    if (otherBottom == 0x10000)
         otherBottom = otherHitbox->bottom[0];
 
 #if !RETRO_USE_ORIGINAL_CODE
     int thisHitboxID  = 0;
     int otherHitboxID = 0;
     if (showHitboxes) {
-        thisHitboxID  = AddDebugHitbox(H_TYPE_PLAT, thisEntity, thisLeft, thisTop, thisRight, thisBottom);
-        otherHitboxID = AddDebugHitbox(H_TYPE_PLAT, otherEntity, otherLeft, otherTop, otherRight, otherBottom);
+        thisHitboxID  = addDebugHitbox(H_TYPE_PLAT, thisEntity, thisLeft, thisTop, thisRight, thisBottom);
+        otherHitboxID = addDebugHitbox(H_TYPE_PLAT, otherEntity, otherLeft, otherTop, otherRight, otherBottom);
     }
 #endif
 

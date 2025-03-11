@@ -1,6 +1,8 @@
 #ifndef USERDATA_H
 #define USERDATA_H
 
+#include "Networking.hpp"
+
 #define GLOBALVAR_COUNT (0x100)
 
 #define ACHIEVEMENT_COUNT (0x40)
@@ -20,37 +22,35 @@
 #define unused(x) (void)x
 
 struct SaveFile {
-    int characterID;    // Value 0/8/16/24
-    int lives;          // Value 1/9/17/25
-    int score;          // Value 2/10/18/26
-    int scoreBonus;     // Value 3/11/19/27
-    int stageID;        // Value 4/12/20/28
-    int emeralds;       // Value 5/13/21/29
-    int specialStageID; // Value 6/14/22/30
-    int unused;         // Value 7/15/23/31
+    int characterID;
+    int lives;
+    int score;
+    int scoreBonus;
+    int stageID;
+    int emeralds;
+    int specialStageID;
+    int unused;
 };
 
 struct SaveGame {
-    SaveFile files[4];   // Values 0-31
-    int saveInitialized; // Value 32
-    int musVolume;       // Value 33
-    int sfxVolume;       // Value 34
-    int spindashEnabled; // Value 35
-    int boxRegion;       // Value 36
-    int vDPadSize;       // Value 37
-    int vDPadOpacity;    // Value 38
-    int vDPadX_Move;     // Value 39
-    int vDPadY_Move;     // Value 40
-    int vDPadX_Jump;     // Value 41
-    int vDPadY_Jump;     // Value 42
-    int tailsUnlocked;   // Value 43
-    int knuxUnlocked;    // Value 44
-    int unlockedActs;    // Value 45
-    int unlockedHPZ;     // Value 46
-    int unused[17];      // Values 47-63
-    int records[0x80];   // Values 64-192
-    int padding[0x73F];  // Values 193-2047
-    int customSS[0x400]; // Values 2048-3072
+    SaveFile files[4];
+    int saveInitialized;
+    int musVolume;
+    int sfxVolume;
+    int spindashEnabled;
+    int boxRegion;
+    int vDPadSize;
+    int vDPadOpacity;
+    int vDPadX_Move;
+    int vDPadY_Move;
+    int vDPadX_Jump;
+    int vDPadY_Jump;
+    int tailsUnlocked;
+    int knuxUnlocked;
+    int unlockedActs;
+    int unlockedHPZ;
+    int unused[17];
+    int records[0x80];
 };
 
 enum OnlineMenuTypes {
@@ -68,12 +68,6 @@ struct LeaderboardEntry {
     int score;
 };
 
-#ifndef NETWORKING_H
-struct MultiplayerData {
-    int type;
-    int data[0x1FF];
-};
-#endif
 
 extern void *nativeFunction[NATIIVEFUNCTION_COUNT];
 extern int nativeFunctionCount;
@@ -167,7 +161,7 @@ void SetAchievement(int *achievementID, int *status);
 void AwardAchievement(int id, int status);
 #if RETRO_USE_MOD_LOADER
 void AddGameAchievement(int *unused, const char *name);
-void SetAchievementDescription(uint *id, const char *desc);
+void SetAchievementDescription(int *id, const char *desc);
 void ClearAchievements();
 void GetAchievementCount();
 void GetAchievementName(uint *id, int *textMenu);
@@ -208,15 +202,6 @@ void ShowSegaIDPopup();
 void ShowOnlineSignIn();
 void ShowWebsite(int websiteID);
 
-// In the Sega Forever versions of S1 & S2, there's a feature where you can choose to watch an ad to continue from a Game Over
-// We obviously can't do that here, so let's just take the L
-inline void NativePlayerWaitingAds() { SetGlobalVariableByName("waitingAds.result", 2); }
-inline void NativeWaterPlayerWaitingAds() { SetGlobalVariableByName("waitingAds.water", 2); }
-
-#if RETRO_REV03
-void NotifyCallback(int *callback, int *param1, int *param2, int *param3);
-#endif
-
 void ExitGame();
 void FileExists(int *unused, const char *filePath);
 
@@ -233,8 +218,9 @@ void GetWindowBorderless();
 void SetWindowBorderless(int *borderless, int *unused);
 void GetWindowVSync();
 void SetWindowVSync(int *enabled, int *unused);
+void GetFrameRate();
+void SetFrameRate(int *enabled, int *unused);
 void ApplyWindowChanges();
-
 #endif
 
 #endif //! USERDATA_H

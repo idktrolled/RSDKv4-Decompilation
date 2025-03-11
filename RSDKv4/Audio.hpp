@@ -11,7 +11,7 @@
 
 #define MAX_VOLUME (100)
 
-#define MUSBUFFER_SIZE   (0x200000)
+#define MUSBUFFER_SIZE   (0x2000000)
 #define STREAMFILE_COUNT (2)
 
 #define MIX_BUFFER_SAMPLES (256)
@@ -119,7 +119,7 @@ void ProcessAudioMixing(Sint32 *dst, const Sint16 *src, int len, int volume, sby
 #endif
 
 #if !RETRO_USE_ORIGINAL_CODE
-inline void FreeMusInfo()
+inline void freeMusInfo()
 {
     LockAudioDevice();
 
@@ -144,7 +144,7 @@ void ProcessAudioPlayback() {}
 void ProcessAudioMixing() {}
 
 #if !RETRO_USE_ORIGINAL_CODE
-inline void FreeMusInfo() { ov_clear(&streamInfo[currentStreamIndex].vorbisFile); }
+inline void freeMusInfo() { ov_clear(&streamInfo[currentStreamIndex].vorbisFile); }
 #endif
 #endif
 
@@ -154,13 +154,15 @@ void SwapMusicTrack(const char *filePath, byte trackID, uint loopPoint, uint rat
 bool PlayMusic(int track, int musStartPos);
 inline void StopMusic(bool setStatus)
 {
-    if (setStatus)
+    if (setStatus) {
         musicStatus = MUSIC_STOPPED;
+		trackID = -1;
+	}
     musicPosition = 0;
 
 #if !RETRO_USE_ORIGINAL_CODE
     LockAudioDevice();
-    FreeMusInfo();
+    freeMusInfo();
     UnlockAudioDevice();
 #endif
 }

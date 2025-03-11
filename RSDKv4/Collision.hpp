@@ -1,15 +1,11 @@
 #ifndef COLLISION_H
 #define COLLISION_H
 
-enum CollisionSides {
-    CSIDE_FLOOR   = 0,
-    CSIDE_LWALL   = 1,
-    CSIDE_RWALL   = 2,
-    CSIDE_ROOF    = 3,
-#if RETRO_REV03
-    CSIDE_LENTITY = 4, // Added in Origins Plus
-    CSIDE_RENTITY = 5, // Added in Origins Plus
-#endif
+enum CollisionSidess {
+    CSIDE_FLOOR = 0,
+    CSIDE_LWALL = 1,
+    CSIDE_RWALL = 2,
+    CSIDE_ROOF  = 3,
 };
 
 enum CollisionModes {
@@ -29,13 +25,9 @@ enum CollisionSolidity {
 
 enum ObjectCollisionTypes {
     C_TOUCH    = 0,
-    C_SOLID    = 1,
-    C_SOLID2   = 2,
+    C_BOX      = 1,
+    C_BOX2     = 2,
     C_PLATFORM = 3,
-};
-
-enum ObjectCollisionFlags {
-    C_BOX = 0x10000,
 };
 
 struct CollisionSensor {
@@ -66,7 +58,7 @@ extern byte showHitboxes;
 extern int debugHitboxCount;
 extern DebugHitboxInfo debugHitboxList[DEBUG_HITBOX_COUNT];
 
-int AddDebugHitbox(byte type, Entity *entity, int left, int top, int right, int bottom);
+int addDebugHitbox(byte type, Entity *entity, int left, int top, int right, int bottom);
 #endif
 
 extern int collisionLeft;
@@ -112,9 +104,5 @@ void ObjectFloorGrip(int xOffset, int yOffset, int cPath);
 void ObjectLWallGrip(int xOffset, int yOffset, int cPath);
 void ObjectRoofGrip(int xOffset, int yOffset, int cPath);
 void ObjectRWallGrip(int xOffset, int yOffset, int cPath);
-#if RETRO_REV03
-void ObjectLEntityGrip(int xOffset, int yOffset, int cPath); // Added in Origins Plus
-void ObjectREntityGrip(int xOffset, int yOffset, int cPath); // Added in Origins Plus
-#endif
 
 #endif // !COLLISION_H

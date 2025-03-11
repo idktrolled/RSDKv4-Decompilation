@@ -30,7 +30,7 @@ int OpenModMenu()
     return 1;
 }
 
-#if RETRO_PLATFORM == RETRO_ANDROID
+#if (RETRO_PLATFORM == RETRO_ANDROID)
 namespace fs = std::__fs::filesystem; // this is so we can avoid using c++17, which causes a ton of warnings w asio and looks ugly
 #else
 namespace fs = std::filesystem;
@@ -38,8 +38,12 @@ namespace fs = std::filesystem;
 
 fs::path resolvePath(fs::path given)
 {
+	    // This crashes and I don't know why
+    // Maybe to do with pathconf somehow?
+#if RETRO_PLATFORM != RETRO_SWITCH
     if (given.is_relative())
         given = fs::current_path() / given; // thanks for the weird syntax!
+#endif
     for (auto &p : fs::directory_iterator{ given.parent_path() }) {
         char pbuf[0x100];
         char gbuf[0x100];
@@ -109,7 +113,7 @@ void InitMods()
 
                     if (flag) {
                         if (LoadMod(&info, modPath.string(), modDirPath.filename().string(), false))
-                            modList.push_back(info);
+                            modList.insert(modList.begin(), info);
                     }
                 }
             }
@@ -292,6 +296,54 @@ void ScanModFolder(ModInfo *info)
         }
     }
 
+    // Check for Scripts/ replacements
+    fs::path scriptPath = resolvePath(modDir + "/Scripts");
+
+    if (fs::exists(scriptPath) && fs::is_directory(scriptPath)) {
+        try {
+            auto data_rdi = fs::recursive_directory_iterator(scriptPath);
+            for (auto &data_de : data_rdi) {
+                if (data_de.is_regular_file()) {
+                    char modBuf[0x100];
+                    StrCopy(modBuf, data_de.path().string().c_str());
+                    char folderTest[4][0x10] = {
+                        "Scripts/",
+                        "Scripts\\",
+                        "scripts/",
+                        "scripts\\",
+                    };
+                    int tokenPos = -1;
+                    for (int i = 0; i < 4; ++i) {
+                        tokenPos = FindLastStringToken(modBuf, folderTest[i]);
+                        if (tokenPos >= 0)
+                            break;
+                    }
+
+                    if (tokenPos >= 0) {
+                        char buffer[0x80];
+                        for (int i = StrLength(modBuf); i >= tokenPos; --i) {
+                            buffer[i - tokenPos] = modBuf[i] == '\\' ? '/' : modBuf[i];
+                        }
+
+                        // PrintLog(modBuf);
+                        std::string path(buffer);
+                        std::string modPath(modBuf);
+                        char pathLower[0x100];
+                        memset(pathLower, 0, sizeof(char) * 0x100);
+                        for (int c = 0; c < path.size(); ++c) {
+                            pathLower[c] = tolower(path.c_str()[c]);
+                        }
+
+                        info->fileMap.insert(std::pair<std::string, std::string>(pathLower, modBuf));
+                    }
+                }
+            }
+        } catch (fs::filesystem_error fe) {
+            PrintLog("Script Folder Scanning Error: ");
+            PrintLog(fe.what());
+        }
+    }
+
     // Check for Bytecode/ replacements
     fs::path bytecodePath = resolvePath(modDir + "/Bytecode");
 
@@ -368,12 +420,12 @@ void RefreshEngine()
 #if RETRO_USING_SDL2
     if (Engine.window) {
         char gameTitle[0x40];
-        sprintf(gameTitle, "%s%s", Engine.gameWindowText, Engine.usingDataFile_Config ? "" : " (Using Data Folder)");
+        sprintf(gameTitle, "%s%s", Engine.gameWindowText, Engine.usingDataFile_Config ? "" : "");
         SDL_SetWindowTitle(Engine.window, gameTitle);
     }
 #elif RETRO_USING_SDL1
     char gameTitle[0x40];
-    sprintf(gameTitle, "%s%s", Engine.gameWindowText, Engine.usingDataFile_Config ? "" : " (Using Data Folder)");
+    sprintf(gameTitle, "%s%s", Engine.gameWindowText, Engine.usingDataFile_Config ? "" : "");
     SDL_WM_SetCaption(gameTitle, NULL);
 #endif
 
@@ -513,7 +565,6 @@ void GetModActive(uint *id, int *unused)
     scriptEng.checkResult = false;
     if (*id >= modList.size())
         return;
-
     scriptEng.checkResult = modList[*id].active;
 }
 
@@ -527,7 +578,7 @@ void SetModActive(uint *id, int *active)
 
 void MoveMod(uint *id, int *up)
 {
-    if (!id || !up)
+    if (!id)
         return;
 
     int preOption = *id;

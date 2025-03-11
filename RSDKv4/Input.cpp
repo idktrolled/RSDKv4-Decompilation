@@ -1,7 +1,7 @@
 #include "RetroEngine.hpp"
 
-InputData keyPress = InputData();
-InputData keyDown  = InputData();
+InputData inputPress = InputData();
+InputData inputDown  = InputData();
 
 int touchDown[8];
 int touchX[8];
@@ -57,11 +57,12 @@ bool getControllerButton(byte buttonID)
     bool pressed = false;
 
     for (int i = 0; i < controllers.size(); ++i) {
+		if (pressed) break;
         SDL_GameController *controller = controllers[i].devicePtr;
 
         if (SDL_GameControllerGetButton(controller, (SDL_GameControllerButton)buttonID)) {
             pressed |= true;
-            continue;
+            break;
         }
         else {
             switch (buttonID) {
@@ -208,7 +209,7 @@ bool getControllerButton(byte buttonID)
 }
 #endif //! RETRO_USING_SDL2
 
-void controllerInit(int controllerID)
+void controllerInit(int controllerID) // controllerID = SDL2 controller index
 {
     for (int i = 0; i < controllers.size(); ++i) {
         if (controllers[i].id == controllerID) {
@@ -242,13 +243,16 @@ void controllerInit(int controllerID)
 #endif
 }
 
-void controllerClose(int controllerID)
+void controllerClose(int controllerID) // controllerID = SDL2 controller id
 {
 #if RETRO_USING_SDL2
     SDL_GameController *controller = SDL_GameControllerFromInstanceID(controllerID);
     if (controller) {
         SDL_GameControllerClose(controller);
 #endif
+        // ok; when compiling under msvc, this code crashes with the controllers.erase() call (when the controllers vector is 1 element long)
+        // why? i'm under the impression that it's some msvc bug to do with the vector length being 1
+        // i've really got no idea, this code compiles and works fine under linux (gcc), so i suspect it must be an msvc fault (as always lmao)
         if (controllers.size() == 1) {
             controllers.clear();
         } else {
@@ -275,10 +279,15 @@ void controllerClose(int controllerID)
 void InitInputDevices()
 {
 #if RETRO_USING_SDL2
+#if RETRO_PLATFORM == RETRO_SWITCH
+    // just gonna override the mapping and be done with it
+    SDL_GameControllerAddMapping("53776974636820436f6e74726f6c6c65,Switch Controller,a:b0,b:b1,back:b11,dpdown:b15,dpleft:b12,dpright:b14,dpup:b13,leftshoulder:b6,leftstick:b4,lefttrigger:b8,leftx:a0,lefty:a1,rightshoulder:b7,rightstick:b5,righttrigger:b9,rightx:a2,righty:a3,start:b10,x:b3,y:b2,");
+#endif
     PrintLog("Initializing gamepads...");
 
     // fix for issue #334 on github, not sure what's going wrong, but it seems to not be initializing the gamepad api maybe?
     SDL_Init(SDL_INIT_JOYSTICK | SDL_INIT_GAMECONTROLLER);
+
 
     int joyStickCount = SDL_NumJoysticks();
     controllers.clear();
@@ -493,11 +502,6 @@ void CheckKeyPress(InputData *input)
     input->R      = inputDevice[INPUT_BUTTONR].press;
     input->start  = inputDevice[INPUT_START].press;
     input->select = inputDevice[INPUT_SELECT].press;
-#endif
-
-#if RETRO_REV03
-    SetGlobalVariableByName("input.pressButton", input->A || input->B || input->C || input->X || input->Y || input->Z || input->L || input->R
-                                                     || input->start || input->select);
 #endif
 }
 
