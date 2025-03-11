@@ -23,6 +23,11 @@ jobs:
           submodules: recursive
       - name: Install dependencies
         run: vcpkg install glew sdl2 libogg libvorbis libtheora --triplet=x86-windows-static
+      - name: Download theoraplay
+        run: |
+          Invoke-WebRequest -Uri "https://github.com/icculus/theoraplay/archive/refs/heads/main.zip" -OutFile "theoraplay.zip"
+          Expand-Archive -Path theoraplay.zip -DestinationPath ./dependencies/all/
+          Rename-Item ./dependencies/all/theoraplay-main theoraplay
       - name: Build RSDKv4
         run: |
           cmake -B build ${{env.GENERAL_FLAGS}} ${{env.GENERAL_WIN_FLAGS}} ${{env.WIN32_FLAGS}}
@@ -45,6 +50,11 @@ jobs:
           submodules: recursive
       - name: Install dependencies
         run: vcpkg install glew sdl2 libogg libvorbis libtheora --triplet=x64-windows-static
+      - name: Download theoraplay
+        run: |
+          Invoke-WebRequest -Uri "https://github.com/icculus/theoraplay/archive/refs/heads/main.zip" -OutFile "theoraplay.zip"
+          Expand-Archive -Path theoraplay.zip -DestinationPath ./dependencies/all/
+          Rename-Item ./dependencies/all/theoraplay-main theoraplay
       - name: Build RSDKv4
         run: |
           cmake -B build ${{env.GENERAL_FLAGS}} ${{env.GENERAL_WIN_FLAGS}} ${{env.WIN64_FLAGS}}
@@ -124,6 +134,11 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install libglew-dev libglfw3-dev libsdl2-dev libogg-dev libvorbis-dev libtheora-dev
+      - name: Download theoraplay
+        run: |
+          Invoke-WebRequest -Uri "https://github.com/icculus/theoraplay/archive/refs/heads/main.zip" -OutFile "theoraplay.zip"
+          Expand-Archive -Path theoraplay.zip -DestinationPath ./dependencies/all/
+          Rename-Item ./dependencies/all/theoraplay-main theoraplay
       - name: Build RSDKv4
         run: |
           cmake -B build ${{env.GENERAL_FLAGS}} ${{env.GENERAL_LINUX_FLAGS}}
