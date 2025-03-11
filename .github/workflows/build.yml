@@ -21,6 +21,8 @@ jobs:
         uses: actions/checkout@v4
         with:
           submodules: recursive
+      - name: Setup MSBuild
+        uses: microsoft/setup-msbuild@v2
       - name: Install dependencies
         run: vcpkg install glew sdl2 libogg libvorbis libtheora --triplet=x86-windows-static
       - name: Download theoraplay
@@ -48,6 +50,8 @@ jobs:
         uses: actions/checkout@v4
         with:
           submodules: recursive
+      - name: Setup MSBuild
+        uses: microsoft/setup-msbuild@v2
       - name: Install dependencies
         run: vcpkg install glew sdl2 libogg libvorbis libtheora --triplet=x64-windows-static
       - name: Download theoraplay
@@ -130,6 +134,8 @@ jobs:
         uses: actions/checkout@v4
         with:
           submodules: recursive
+      - name: Setup MSBuild
+        uses: microsoft/setup-msbuild@v2
       - name: Install dependencies
         run: |
           sudo apt-get update
