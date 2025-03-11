@@ -60,8 +60,8 @@ void PlayerSelectScreen_Main(void *objPtr)
             if (self->timer > 0.5) {
                 self->timer      = 0.0;
                 self->state      = PLAYERSELECTSCREEN_STATE_MAIN;
-                keyPress.start = false;
-                keyPress.A     = false;
+                inputPress.start = false;
+                inputPress.A     = false;
                 self->alpha      = 256;
                 if (usePhysicalControls)
                     self->playerID = SAVESEL_SONIC;
@@ -69,27 +69,27 @@ void PlayerSelectScreen_Main(void *objPtr)
             break;
 
         case PLAYERSELECTSCREEN_STATE_MAIN:
-            CheckKeyDown(&keyDown);
-            CheckKeyPress(&keyPress);
+            CheckKeyDown(&inputDown);
+            CheckKeyPress(&inputPress);
             SetRenderMatrix(&self->matrixTemp);
             if (usePhysicalControls) {
                 if (touches > 0) {
                     usePhysicalControls = false;
                 }
                 else {
-                    if (keyPress.left) {
+                    if (inputPress.left) {
                         if (saveGame->knuxUnlocked) {
                             PlaySfxByName("Menu Move", false);
-                            if (--self->playerID < SAVESEL_SONIC)
+                            if (--self->playerID < 0)
                                 self->playerID = SAVESEL_KNUX;
                         }
                         else if (saveGame->tailsUnlocked) {
                             PlaySfxByName("Menu Move", false);
-                            if (--self->playerID > SAVESEL_SONIC)
+                            if (--self->playerID > 0)
                                 self->playerID = SAVESEL_TAILS;
                         }
                     }
-                    else if (keyPress.right) {
+                    else if (inputPress.right) {
                         if (saveGame->knuxUnlocked) {
                             PlaySfxByName("Menu Move", false);
 
@@ -106,12 +106,12 @@ void PlayerSelectScreen_Main(void *objPtr)
                             self->playerID = SAVESEL_SONIC;
                         }
                     }
-                    if (keyPress.start || keyPress.A) {
+                    if (inputPress.start || inputPress.A) {
                         PlaySfxByName("Menu Select", false);
                         StopMusic(true);
                         self->state = PLAYERSELECTSCREEN_STATE_ACTION;
                     }
-                    else if (keyPress.B) {
+                    else if (inputPress.B) {
                         PlaySfxByName("Menu Back", false);
                         self->backPressed = false;
                         self->state       = PLAYERSELECTSCREEN_STATE_EXIT;
@@ -153,7 +153,7 @@ void PlayerSelectScreen_Main(void *objPtr)
                         }
                     }
                     self->backPressed = CheckTouchRect(128.0, -92.0, 32.0, 32.0) >= 0;
-                    if (self->state == PLAYERSELECTSCREEN_STATE_MAIN && (keyDown.left || keyDown.right)) {
+                    if (self->state == PLAYERSELECTSCREEN_STATE_MAIN && (inputDown.left || inputDown.right)) {
                         usePhysicalControls = true;
                         self->playerID      = SAVESEL_SONIC;
                     }
@@ -164,12 +164,12 @@ void PlayerSelectScreen_Main(void *objPtr)
                         StopMusic(true);
                         self->state = PLAYERSELECTSCREEN_STATE_ACTION;
                     }
-                    if (self->backPressed || keyPress.B) {
+                    if (self->backPressed || inputPress.B) {
                         PlaySfxByName("Menu Back", false);
                         self->backPressed = false;
                         self->state       = PLAYERSELECTSCREEN_STATE_EXIT;
                     }
-                    else if (self->state == PLAYERSELECTSCREEN_STATE_MAIN && (keyDown.left || keyDown.right)) {
+                    else if (self->state == PLAYERSELECTSCREEN_STATE_MAIN && (inputDown.left || inputDown.right)) {
                         usePhysicalControls = true;
                         self->playerID      = SAVESEL_SONIC;
                     }
@@ -177,7 +177,7 @@ void PlayerSelectScreen_Main(void *objPtr)
             }
             break;
 
-        case PLAYERSELECTSCREEN_STATE_ACTION:
+        case 2:
             SetRenderMatrix(&self->matrixTemp);
 
             self->timer2 += Engine.deltaTime;
@@ -226,14 +226,13 @@ void PlayerSelectScreen_Main(void *objPtr)
                 SetGlobalVariableByName("starPostID", 0);
                 debugMode = false;
 
-                int charID = 0;
                 switch (self->playerID) {
-                    case SAVESEL_SONIC: charID = 0; break;
-                    case SAVESEL_TAILS: charID = 1; break;
-                    case SAVESEL_KNUX: charID = 2; break;
-                    case SAVESEL_ST: charID = 3; break;
+                    case SAVESEL_SONIC: saveGame->files[saveSel->selectedButton - 1].characterID = 0; break;
+                    case SAVESEL_TAILS: saveGame->files[saveSel->selectedButton - 1].characterID = 1; break;
+                    case SAVESEL_KNUX: saveGame->files[saveSel->selectedButton - 1].characterID = 2; break;
+                    case SAVESEL_ST: saveGame->files[saveSel->selectedButton - 1].characterID = 3; break;
                 }
-                InitStartingStage(STAGELIST_PRESENTATION, 0, charID);
+                InitStartingStage(STAGELIST_PRESENTATION, 0, saveGame->files[saveSel->selectedButton - 1].characterID);
 
                 CREATE_ENTITY(FadeScreen);
             }

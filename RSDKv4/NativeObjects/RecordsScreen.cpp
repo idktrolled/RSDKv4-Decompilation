@@ -1,7 +1,9 @@
 #include "RetroEngine.hpp"
 
-float timeAttackU[] = { 1.0, 321.0, 641.0, 1.0, 321.0, 641.0, 641.0 };
-float timeAttackV[] = { 1.0, 1.0, 1.0, 241.0, 241.0, 241.0, 721.0 };
+float timeAttackU[] = {
+    1.0, 321.0, 641.0, 1.0, 321.0, 641.0,
+};
+float timeAttackV[] = { 1.0, 1.0, 1.0, 241.0, 241.0, 241.0 };
 
 void RecordsScreen_Create(void *objPtr)
 {
@@ -93,9 +95,7 @@ void RecordsScreen_Main(void *objPtr)
                         case 8: self->recordOffset = (timeAttack_ActCount * 8) + 1; break;
                         case 9: self->recordOffset = 22; break;
                         case 10: self->recordOffset = 20; break;
-#if !RETRO_USE_ORIGINAL_CODE
                         case 11: self->recordOffset = 23; break;
-#endif
                     }
                 }
             }
@@ -105,28 +105,13 @@ void RecordsScreen_Main(void *objPtr)
                 switch (self->zoneID) {
                     default: break;
                     case 9:
-#if !RETRO_USE_ORIGINAL_CODE
                     case 11:
-#endif
                         self->timeAttackU = timeAttackU[0];
                         self->timeAttackV = timeAttackV[0];
                         break;
                     case 10:
                         self->timeAttackU = timeAttackU[1];
                         self->timeAttackV = timeAttackV[1];
-                        break;
-                }
-            }
-            else if (Engine.gameType == GAME_SONIC1 && self->zoneID >= 6) {
-                switch (self->zoneID) {
-                    default: break;
-                    case 6: // dumber stupider dumber
-                        self->timeAttackU = timeAttackU[6];
-                        self->timeAttackV = timeAttackV[6];
-                        break;
-                    case 7:
-                        self->timeAttackU = timeAttackU[(self->recordOffset - 1) % 6];
-                        self->timeAttackV = timeAttackV[(self->recordOffset - 1) % 6];
                         break;
                 }
             }
@@ -140,7 +125,7 @@ void RecordsScreen_Main(void *objPtr)
                 switch (self->zoneID) {
                     default: pos = timeAttack_ActCount * self->zoneID; break;
                     case 7: // special stage
-                        pos = timeAttack_ActCount * 6;
+                        pos = 6 * self->zoneID;
                         pos++;
                         break;
                 }
@@ -194,8 +179,8 @@ void RecordsScreen_Main(void *objPtr)
         }
 
         case RECORDSSCREEN_STATE_MAIN: {
-            CheckKeyDown(&keyDown);
-            CheckKeyPress(&keyPress);
+            CheckKeyDown(&inputDown);
+            CheckKeyPress(&inputPress);
             SetRenderMatrix(&self->matrixTemp);
             if (!usePhysicalControls) {
                 if (touches <= 0) {
@@ -285,16 +270,16 @@ void RecordsScreen_Main(void *objPtr)
                 }
 
                 if (self->state == RECORDSSCREEN_STATE_MAIN) {
-                    if (keyDown.left) {
+                    if (inputDown.left) {
                         self->selectedButton = RECORDSSCREEN_BUTTON_NEXTACT;
                         usePhysicalControls  = true;
                     }
                     else {
-                        if (keyDown.right) {
+                        if (inputDown.right) {
                             self->selectedButton = RECORDSSCREEN_BUTTON_PLAY;
                             usePhysicalControls  = true;
                         }
-                        else if (keyPress.B) {
+                        else if (inputPress.B) {
                             PlaySfxByName("Menu Back", false);
                             self->backPressed = false;
                             self->state       = RECORDSSCREEN_STATE_EXIT;
@@ -312,7 +297,7 @@ void RecordsScreen_Main(void *objPtr)
                     self->backPressed    = false;
 
                     if (self->actCount > 1) {
-                        if (keyPress.left) {
+                        if (inputPress.left) {
                             PlaySfxByName("Menu Move", false);
                             self->selectedButton--;
                             if (self->selectedButton < 0) {
@@ -324,7 +309,7 @@ void RecordsScreen_Main(void *objPtr)
                                 self->flipRight = true;
                             }
                         }
-                        else if (keyPress.right) {
+                        else if (inputPress.right) {
                             PlaySfxByName("Menu Move", false);
                             self->selectedButton++;
                             if (self->selectedButton >= 2) {
@@ -342,7 +327,7 @@ void RecordsScreen_Main(void *objPtr)
                         self->buttons[self->selectedButton]->state = PUSHBUTTON_STATE_SELECTED;
                     }
 
-                    if (keyPress.start || keyPress.A) {
+                    if (inputPress.start || inputPress.A) {
                         if (self->selectedButton) {
                             PlaySfxByName("Menu Move", false);
                             self->state     = RECORDSSCREEN_STATE_FLIP;
@@ -355,7 +340,7 @@ void RecordsScreen_Main(void *objPtr)
                             self->buttons[RECORDSSCREEN_BUTTON_PLAY]->state = PUSHBUTTON_STATE_FLASHING;
                         }
                     }
-                    else if (keyPress.B) {
+                    else if (inputPress.B) {
                         PlaySfxByName("Menu Back", false);
                         self->backPressed = false;
                         self->state       = RECORDSSCREEN_STATE_EXIT;
@@ -371,7 +356,7 @@ void RecordsScreen_Main(void *objPtr)
                 switch (self->zoneID) {
                     default: pos += timeAttack_ActCount * self->zoneID; break;
                     case 7: // special stage
-                        pos += timeAttack_ActCount * 6;
+                        pos += 6 * self->zoneID;
                         pos++;
                         break;
                 }
@@ -379,7 +364,7 @@ void RecordsScreen_Main(void *objPtr)
             else {
                 if (self->zoneID >= 8) {
                     pos += timeAttack_ActCount * 8;
-                    ++pos; // metropolis moment
+                    ++pos;
                     pos += self->zoneID - 8;
                 }
                 else {
@@ -403,28 +388,13 @@ void RecordsScreen_Main(void *objPtr)
                     switch (self->zoneID) {
                         default: break;
                         case 9:
-#if !RETRO_USE_ORIGINAL_CODE
                         case 11:
-#endif
                             self->timeAttackU = timeAttackU[0];
                             self->timeAttackV = timeAttackV[0];
                             break;
                         case 10:
                             self->timeAttackU = timeAttackU[1];
                             self->timeAttackV = timeAttackV[1];
-                            break;
-                    }
-                }
-                else if (Engine.gameType == GAME_SONIC1 && self->zoneID >= 6) {
-                    switch (self->zoneID) {
-                        default: break;
-                        case 6: // dumber stupider dumber
-                            self->timeAttackU = timeAttackU[6];
-                            self->timeAttackV = timeAttackV[6];
-                            break;
-                        case 7:
-                            self->timeAttackU = timeAttackU[(self->recordOffset + self->actID - 1) % 6];
-                            self->timeAttackV = timeAttackV[(self->recordOffset + self->actID - 1) % 6];
                             break;
                     }
                 }
@@ -516,14 +486,8 @@ void RecordsScreen_Main(void *objPtr)
                 SetGlobalVariableByName("specialStage.listPos", 0);
                 SetGlobalVariableByName("specialStage.emeralds", 0);
                 SetGlobalVariableByName("specialStage.nextZone", 0);
-                SetGlobalVariableByName("specialStage.nextZone", 0); // We gotta make extra sure it's reset, I guess
-#if !RETRO_USE_ORIGINAL_CODE
+                SetGlobalVariableByName("specialStage.nextZone", 0);
                 SetGlobalVariableByName("lampPostID", 0);
-#endif
-                // Bug Details:
-                // Despite using the variable "lampPostID" for checkpoints, Sonic 1 still tries to set "starPostID", which only exists in Sonic 2
-                // As a result, the checkpoint variable doesn't get reset in Sonic 1, allowing you to start an act further into the level if exploited
-                // (This is fixed in the decomp with the above line)
                 SetGlobalVariableByName("starPostID", 0);
                 SetGlobalVariableByName("timeAttack.result", 0);
 
@@ -534,16 +498,13 @@ void RecordsScreen_Main(void *objPtr)
                         default: break;
                         case 9: InitStartingStage(STAGELIST_BONUS, 1, 0); break;
                         case 10: InitStartingStage(STAGELIST_REGULAR, self->zoneID * timeAttack_ActCount, 0); break;
-#if !RETRO_USE_ORIGINAL_CODE
                         case 11: InitStartingStage(STAGELIST_BONUS, 0, 0); break;
-#endif
                     }
                 }
                 else
                     InitStartingStage(STAGELIST_REGULAR, self->zoneID * timeAttack_ActCount + self->actID, 0);
 
                 self->state      = RECORDSSCREEN_STATE_SHOWRESULTS;
-                self->flashTimer = 0.0;
                 self->taResultID = GetGlobalVariableID("timeAttack.result");
                 BackupNativeObjects();
                 CREATE_ENTITY(FadeScreen);
@@ -556,7 +517,7 @@ void RecordsScreen_Main(void *objPtr)
                 switch (self->zoneID) {
                     default: pos += timeAttack_ActCount * self->zoneID; break;
                     case 7: // special stage
-                        pos += timeAttack_ActCount * 6;
+                        pos += 6 * self->zoneID;
                         pos++;
                         break;
                 }
@@ -582,26 +543,24 @@ void RecordsScreen_Main(void *objPtr)
 
                 for (int r = 0; r < 3; ++r) {
                     if (time < records[r]) {
-                        for (int s = 2; s > r; --s) records[s] = records[s - 1];
+                        for (int s = r + 1; s < 3; ++s) records[s + 1] = records[s];
                         records[r] = time;
                         self->rank = r + 1;
                         break;
                     }
                 }
 
-                if (self->rank) {
-                    SetStringToFont8(self->rank1st, "1.", FONT_LABEL);
-                    AddTimeStringToFont(self->rank1st, records[0], FONT_LABEL);
-                    SetStringToFont8(self->rank2nd, "2.", FONT_LABEL);
-                    AddTimeStringToFont(self->rank2nd, records[1], FONT_LABEL);
-                    SetStringToFont8(self->rank3rd, "3.", FONT_LABEL);
-                    AddTimeStringToFont(self->rank3rd, records[2], FONT_LABEL);
+                SetStringToFont8(self->rank1st, "1.", FONT_LABEL);
+                AddTimeStringToFont(self->rank1st, records[0], FONT_LABEL);
+                SetStringToFont8(self->rank2nd, "2.", FONT_LABEL);
+                AddTimeStringToFont(self->rank2nd, records[1], FONT_LABEL);
+                SetStringToFont8(self->rank3rd, "3.", FONT_LABEL);
+                AddTimeStringToFont(self->rank3rd, records[2], FONT_LABEL);
 
-                    self->timer = 0.0;
-                    self->state = RECORDSSCREEN_STATE_EXITRESULTS;
-                    PlaySfxByName("Event", false);
-                    WriteSaveRAMData();
-                }
+                self->timer = 0.0;
+                self->state = RECORDSSCREEN_STATE_EXITRESULTS;
+                PlaySfxByName("Event", false);
+                WriteSaveRAMData();
 
                 int pos = 0;
                 for (int i = 0; i < timeAttack_ZoneCount; ++i) {
@@ -659,12 +618,7 @@ void RecordsScreen_Main(void *objPtr)
                     }
                     else {
                         if (z < 9) {
-#if !RETRO_USE_ORIGINAL_CODE
-                            if (z < 11)
-                                for (int a = 0; a < timeAttack_ActCount; ++a) timeAttack->totalTime += saveGame->records[3 * (pos + a)];
-#else
                             for (int a = 0; a < timeAttack_ActCount; ++a) timeAttack->totalTime += saveGame->records[3 * (pos + a)];
-#endif
                             pos += timeAttack_ActCount;
                         }
                         else {
