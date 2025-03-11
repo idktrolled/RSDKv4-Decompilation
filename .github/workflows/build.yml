@@ -89,6 +89,11 @@ jobs:
           Invoke-WebRequest -Uri "https://libsdl.org/release/SDL2-2.28.3.zip" -OutFile "SDL2.zip"
           Expand-Archive -Path SDL2.zip -DestinationPath ./android/app/jni/
           Rename-Item ./android/app/jni/SDL2-2.28.3 SDL
+      - name: Download theoraplay
+        run: |
+          Invoke-WebRequest -Uri "https://github.com/icculus/theoraplay/archive/refs/heads/main.zip" -OutFile "theoraplay.zip"
+          Expand-Archive -Path theoraplay.zip -DestinationPath ./dependencies/all/
+          Rename-Item ./dependencies/all/theoraplay-main theoraplay
       - name: Move & Copy stuff
         run: |
           Copy-Item -Path ./dependencies/android/app/jni/src/dependencies/android\* -Destination ./dependencies/
